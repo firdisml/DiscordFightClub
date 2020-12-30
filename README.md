@@ -24,3 +24,7 @@ Ever wanted to have a fighting club in your discord server ? Discord Fight Club 
 # How to use the bot ?
 
 Simply type ```!fight @Player1 @Player2``` and enjoy ! :)
+
+# Images
+
+[![Image from Gyazo](https://i.gyazo.com/c2008271835efa7f211cd70b75fbafc5.gif)](https://gyazo.com/c2008271835efa7f211cd70b75fbafc5)
