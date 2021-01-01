@@ -53,14 +53,42 @@ def Damage():
 rngLol = random.randint(1, 25)
 
 
+PlayerRecords = {}
+
+
+async def register(Member: discord.Member):
+    if not PlayerRecords.get(f"{Member.name}"):
+        plywins = 0
+        PlayerRecords.update({f"{Member.name}": plywins})
+        channel = await Member.create_dm()
+        content = "Hey le gros t rendu dans DB que jpuisse compter tes wins."
+        await channel.send(content)
+    else:
+        pass
+
+
+async def AddWin(Member: discord.Member):
+    plywinsC = PlayerRecords.get(f"{Member.name}")
+    print(plywinsC)
+    plywinsN = int(plywinsC) + 1
+    PlayerRecords.update({f"{Member.name}": plywinsN})
+
+
+
+
+
+
+
+
 
 
 
 
 async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
+    await register(Player1)
+    await register(Player2)
     #Announcment Embed
     rng2 = random.randint(0, 1)
-    hit = random.randint(1, 25)
     probabilityCritical = (1/2 + 1/25 - (1/2 * 1/25)) * 100
     names = [Player1.name, Player2.name]
     updated_embed2 = discord.Embed(title="Fight Annoucment", color=0x0000ff)
@@ -82,6 +110,7 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
                         f"```js\n {Player2.name} criss une claque {bodyPartsFunc()} à {Player1.name}```"]
     while mem1Health > 0 and mem2Health > 0:
         if CoinToss() == "odd" and mem1Health > 0 and mem2Health > 0:
+            hit = random.randint(1, 25)
             mem2Health = mem2Health - hit
             DamageTextply1 = str(
                 f"""```excel\n{Player2.name} - {hit} HP```""")
@@ -96,6 +125,7 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             time.sleep(2)
             await ctx.channel.send(embed=updated_embed)
         elif CoinToss() == "even" and mem1Health > 0 and mem2Health > 0:
+            hit = random.randint(1, 25)
             mem1Health = mem1Health - hit
             DamageTextply2 = str(
                 f"""```excel\n{Player1.name} - {hit}```""")
@@ -109,20 +139,6 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             updated_embed.set_footer(text=f"Critical Hit Chance {probabilityCritical}%")
             time.sleep(2)
             await ctx.channel.send(embed=updated_embed)
-        # elif CoinToss() == "even" or "odd" and Winner == 1 and mem1Health != 0 and mem2Health != 0:
-        #     mem2Health = mem2Health - 100
-        #     DamageTextply1 = str(
-        #         f"""```excel\n{Player2.name} - {100} HP```""")
-        #     Healthtextply1 = str(
-        #         f"""```css\n{Player1.name}: {mem1Health} HP\n{Player2.name}: {mem2Health} HP```""")
-        #     updated_embed = discord.Embed(title="Fight Club", color=0x0000ff)
-        #     updated_embed.add_field(name="Degâts Infligés", value=DamageTextply1)
-        #     updated_embed.add_field(name="Vie des joueurs", value=Healthtextply1)
-        #     updated_embed.add_field(name="Log", value=AtkStringPlayer1[rng], inline=False)
-        #     updated_embed.set_author(name="Fight Club", url="https://github.com/Ticass")
-        #     updated_embed.set_footer(text=f"Critical Hit Chance {probabilityCritical}%")
-        #     time.sleep(2)
-        #     await ctx.channel.send(embed=updated_embed)
     else:
         if mem1Health < 1 or mem2Health < 1:
             print(f"Vie du joueur 2: {mem1Health} HP")
@@ -141,9 +157,9 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             content2 = f"Vous avez gagné un combat contre {Player2.name}, \n GG"
             await channel.send(content)
             await channel2.send(content2)
-            # await Player2.move_to(discord.VoiceChannel.name("TRANSEXUELS #LGBTQ+"))
+            await AddWin(Player1)
+            print(PlayerRecords)
         elif mem1Health < mem2Health:
-            mem1Health = 0
             Fight_end = discord.Embed(title="Résultats du combat", color=0x0000ff)
             Fight_end.add_field(name="Retard #1", value=f"{Player1.name}")
             Fight_end.add_field(name="Retard #2", value=f"{Player2.name}")
@@ -157,7 +173,10 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             content3 = f"Vous avez gagné un combat contre {Player1.name}, \n GG"
             await channel.send(content)
             await channel3.send(content3)
+            await AddWin(Player2)
+            print(PlayerRecords)
             # await Player1.move_to(discord.VoiceChannel.name("TRANSEXUELS #LGBTQ+"))
+
 
 
 @bot.event
