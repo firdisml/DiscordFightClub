@@ -33,21 +33,6 @@ def bodyPartsFunc():
     return bodyParts[rng]
 
 
-# end
-
-
-def Damage():
-    damage = 0
-    for x in bodyPartsFunc():
-        if x == "sua yeule":
-            damage = 25
-        elif x == "din schnolles":
-            damage = 50
-        elif x == "sul front":
-            damage = 15
-        elif x == "dans l'anus":
-            damage = 20
-    return [damage, bodyPartsFunc()]
 
 
 rngLol = random.randint(1, 25)
@@ -174,6 +159,7 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await channel.send(content)
             await channel3.send(content3)
             await AddWin(Player2)
+            await ctx.channel.send(embed=Fight_end)
             print(PlayerRecords)
             # await Player1.move_to(discord.VoiceChannel.name("TRANSEXUELS #LGBTQ+"))
 
