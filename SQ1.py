@@ -59,13 +59,20 @@ async def AddWin(Member: discord.Member):
     PlayerRecords.update({f"{Member.name}": plywinsN})
 
 
-# Main Function
-async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
-    await register(Player1)
-    await register(Player2)
-    #Announcment Embed
+probabilityCritical = (1 / 2 + 1 / 25 - (1 / 2 * 1 / 25)) * 100
+
+
+async def WinEmbed(ctx, Player1: discord.Member, Player2: discord.Member):
+    WinStats = discord.Embed(title="Statistiques des combatants", color=0x0000ff)
+    WinStats.add_field(name=f"{Player1.name}", value=f" Wins: {PlayerRecords.get(f'{Player1.name}')}")
+    WinStats.add_field(name=f"{Player2.name}", value=f" Wins: {PlayerRecords.get(f'{Player2.name}')}")
+    WinStats.set_author(name="Fight Club", url="https://github.com/Ticass")
+    WinStats.set_footer(text=f"SQ1 Fight Club")
+    await ctx.channel.send(embed=WinStats)
+
+
+async def AnnounceFight(ctx, Player1: discord.Member, Player2: discord.Member):
     rng2 = random.randint(0, 1)
-    probabilityCritical = (1/2 + 1/25 - (1/2 * 1/25)) * 100
     names = [Player1.name, Player2.name]
     updated_embed2 = discord.Embed(title="Fight Annoucment", color=0x0000ff)
     updated_embed2.add_field(name="Retard #1", value=f"{Player1.name}")
@@ -74,6 +81,14 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
     updated_embed2.set_author(name="Crybaby", url="https://github.com/Ticass")
     updated_embed2.set_footer(text=f"SQ1 Fight Club")
     await ctx.channel.send(embed=updated_embed2)
+
+
+# Main Function
+async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
+    await register(Player1)
+    await register(Player2)
+    #Announcment Embed
+    await AnnounceFight(ctx, Player1, Player2)
     mem1Health = 100
     mem2Health = 100
     rng = random.randint(0, 2)
@@ -134,13 +149,9 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await channel.send(content)
             await channel2.send(content2)
             await AddWin(Player1)
-            WinStats = discord.Embed(title="Statistiques des combatants", color=0x0000ff)
-            WinStats.add_field(name=f"{Player1.name}", value=f" Wins: {PlayerRecords.get(f'{Player1.name}')}")
-            WinStats.add_field(name=f"{Player2.name}", value=f" Wins: {PlayerRecords.get(f'{Player2.name}')}")
-            WinStats.set_author(name="Fight Club", url="https://github.com/Ticass")
-            WinStats.set_footer(text=f"SQ1 Fight Club")
-            await ctx.channel.send(embed=WinStats)
+            await WinEmbed(ctx, Player1, Player2)
             print(PlayerRecords)
+            await Player2.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
         elif mem1Health < mem2Health:
             Fight_end = discord.Embed(title="Résultats du combat", color=0x0000ff)
             Fight_end.add_field(name="Retard #1", value=f"{Player1.name}")
@@ -149,9 +160,6 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             Fight_end.set_author(name="Fight Club", url="https://github.com/Ticass")
             Fight_end.set_footer(text=f"SQ1 Fight Club")
             await ctx.channel.send(embed=Fight_end)
-            #Win Embed
-
-            #Win Embed End
             channel = await Player1.create_dm()
             content = f"Vous avez perdu un combat contre {Player2.name}, \n Criss de noob lol"
             channel3 = await Player2.create_dm()
@@ -159,15 +167,9 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await channel.send(content)
             await channel3.send(content3)
             await AddWin(Player2)
-            WinStats = discord.Embed(title="Statistiques des combatants", color=0x0000ff)
-            WinStats.add_field(name=f"{Player1.name}", value=f" Wins: {PlayerRecords.get(f'{Player1.name}')}")
-            WinStats.add_field(name=f"{Player2.name}", value=f" Wins: {PlayerRecords.get(f'{Player2.name}')}")
-            WinStats.set_author(name="Fight Club", url="https://github.com/Ticass")
-            WinStats.set_footer(text=f"SQ1 Fight Club")
-            await ctx.channel.send(embed=WinStats)
-            await ctx.channel.send(embed=Fight_end)
+            await WinEmbed(ctx, Player1, Player2)
             print(PlayerRecords)
-            # await Player1.move_to(discord.VoiceChannel.name("TRANSEXUELS #LGBTQ+"))
+            await Player1.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
 
 
 
