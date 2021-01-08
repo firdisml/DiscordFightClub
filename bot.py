@@ -1,14 +1,13 @@
 import os
 import random
+import time
 
 import discord
+# DB
+import firebase_admin
 from discord.ext import commands
 from dotenv import load_dotenv
-import time
-#DB
-import firebase_admin
 from firebase_admin import credentials, firestore
-
 
 # Load DotENV Files
 load_dotenv()
@@ -57,15 +56,16 @@ rngLol = random.randint(1, 25)
 
 
 async def RegisterDB(Player: discord.Member):
-    Player_ref = firestore_db.collection(u'Players').document(u''+Player.name)
+    Player_ref = firestore_db.collection(u'Players').document(u''+f'{Player.id}')
     _Player = Player_ref.get()
     if not _Player.exists:
         print("Player not existent")
         data = {
             u'Name': f'{Player.name}',
-            u'Wins': 0
+            u'Wins': 0,
+            u'Balance': 500
         }
-        firestore_db.collection(u'Players').document(u''+Player.name).set(data)
+        firestore_db.collection(u'Players').document(u''+f'{Player.id}').set(data)
         channel2 = await Player.create_dm()
         content2 = f"Tu es maintenant enregistrer dans firestore avec succes {Player.name}"
         await channel2.send(content2)
@@ -74,7 +74,7 @@ async def RegisterDB(Player: discord.Member):
 
 
 async def AddWin(Member: discord.Member):
-    Player_ref = firestore_db.collection(u'Players').document(u''+Member.name)
+    Player_ref = firestore_db.collection(u'Players').document(u''+f'{Member.id}')
     wins = Player_ref.get()
     if wins.exists:
         print(f'Document data: {wins.to_dict()}')
@@ -86,7 +86,7 @@ async def AddWin(Member: discord.Member):
 
 
 def GetPlayerWins(Player : discord.Member):
-    Player_ref = firestore_db.collection(u'Players').document(u''+Player.name)
+    Player_ref = firestore_db.collection(u'Players').document(u''+f'{Player.id}')
     wins = Player_ref.get()
     if wins.exists:
         print(f'Document data: {wins.to_dict()}')
@@ -94,6 +94,49 @@ def GetPlayerWins(Player : discord.Member):
         return _wins
     else:
         return "No document found"
+
+
+def GetPlayerBalance(Player: discord.Member):
+    Player_ref = firestore_db.collection(u'Players').document(u''+f'{Player.id}')
+    money = Player_ref.get()
+    if money.exists:
+        print(f'Document data: {money.to_dict()}')
+        _money = money.get("Balance")
+        return _money
+    else:
+        return "No document found"
+
+
+def AddPlayerBalance(Player: discord.Member, money: int):
+    Player_ref = firestore_db.collection(u'Players').document(u'' + f'{Player.id}')
+    Balance = Player_ref.get()
+    if Balance.exists:
+        _Balance = Balance.get("Balance")
+        Player_ref.update({u'Balance': _Balance + money})
+    else:
+        print("No document found")
+
+
+def RemovePlayerBalance(Player: discord.Member, money: int):
+    Player_ref = firestore_db.collection(u'Players').document(u'' + f'{Player.id}')
+    Balance = Player_ref.get()
+    if Balance.exists:
+        _Balance = Balance.get("Balance")
+        if _Balance >= money:
+            Player_ref.update({u'Balance': _Balance - money})
+    else:
+        print("No document found")
+
+
+@bot.command()
+async def Bet(ctx, PlayerBettedOn: discord.Member, amount: int):
+    if GetPlayerBalance(ctx.author) >= amount:
+        RemovePlayerBalance(ctx.author, amount)
+        _bet = {"Player_Betted_on": PlayerBettedOn, "Amount": amount}
+        await ctx.channel.send(f"Bet Placed on: {PlayerBettedOn.name}, of ${amount}")
+        return _bet
+    else:
+        return "Not enough Money"
 
 
 
@@ -194,6 +237,11 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await AddWin(Player1)
             await WinEmbed(ctx, Player1, Player2)
             await Player2.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
+            _bet = await Bet()
+            PlayerBettedOn = _bet.get("Player_Betted_on")
+            betAmount = _bet.get("Amount")
+            if PlayerBettedOn == Player1:
+                AddPlayerBalance(Player1, betAmount)
         elif mem1Health < mem2Health:
             Fight_end = discord.Embed(title="Résultats du combat", color=0x0000ff)
             Fight_end.add_field(name="Retard #1", value=f"{Player1.name}")
@@ -211,6 +259,11 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await AddWin(Player2)
             await WinEmbed(ctx, Player1, Player2)
             await Player1.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
+            _bet = await Bet()
+            PlayerBettedOn = _bet.get("Player_Betted_on")
+            betAmount = _bet.get("Amount")
+            if PlayerBettedOn == Player2:
+                AddPlayerBalance(Player2, betAmount)
 
 
 
