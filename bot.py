@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from datetime import date
 
 import discord
 # DB
@@ -8,6 +9,10 @@ import firebase_admin
 from discord.ext import commands
 from dotenv import load_dotenv
 from firebase_admin import credentials, firestore
+from discord import colour
+
+
+
 
 # Load DotENV Files
 load_dotenv()
@@ -107,6 +112,35 @@ def GetPlayerBalance(Player: discord.Member):
         return "No document found"
 
 
+def StoreFight(Player1: discord.Member, Player2: discord.Member, date : any, Winner: discord.Member):
+    Fight_ref = firestore_db.collection(u'Players')
+    _Fight = Fight_ref.get()
+    print("Storing Fight")
+    data = {
+            u'Date': str(date),
+            u'FIghter1ID': Player1.id,
+            u'Fighter2ID': Player2.id,
+            u'FIghter1_Name': Player1.name,
+            u'Fighter2_Name': Player2.name,
+            u'Winner_ID': Winner.id,
+            u'Winner_Name': Winner.name
+        }
+    snapshot = firestore_db.collection(u'Fights').get()
+    Snapid = len(snapshot)
+    firestore_db.collection(u'Fights').document(u'' + str(Snapid+1)).set(data)
+
+
+@bot.command()
+async def bal(ctx):
+    BalEmbeder = discord.Embed(title="Balance", color=discord.Color.red())
+    BalEmbeder.add_field(name="Retard", value=f"```{ctx.author.name}```")
+    BalEmbeder.add_field(name="Cagnote", value=f"``` Montant: {GetPlayerBalance(ctx.author)} ```")
+    BalEmbeder.set_author(name="Fight Club", url="https://github.com/Ticass")
+    BalEmbeder.set_footer(text=f"SQ1 Fight Club")
+    await ctx.channel.send(embed=BalEmbeder)
+
+
+
 def AddPlayerBalance(Player: discord.Member, money: int):
     Player_ref = firestore_db.collection(u'Players').document(u'' + f'{Player.id}')
     Balance = Player_ref.get()
@@ -128,15 +162,65 @@ def RemovePlayerBalance(Player: discord.Member, money: int):
         print("No document found")
 
 
-@bot.command()
-async def Bet(ctx, PlayerBettedOn: discord.Member, amount: int):
-    if GetPlayerBalance(ctx.author) >= amount:
-        RemovePlayerBalance(ctx.author, amount)
-        _bet = {"Player_Betted_on": PlayerBettedOn, "Amount": amount}
-        await ctx.channel.send(f"Bet Placed on: {PlayerBettedOn.name}, of ${amount}")
-        return _bet
+def GetPlayerBet(Player: discord.Member):
+    Bet_ref = firestore_db.collection(u'Bets').document(u'' + f'{Player.id}')
+    _Bet = Bet_ref.get()
+    if _Bet.exists:
+        BetDict = _Bet.to_dict()
+        _BetValue : int = BetDict.get("Bet")
+        return _BetValue
     else:
-        return "Not enough Money"
+        return False
+
+
+def GetPlayerBettedOn(Player: discord.Member):
+    Bet_ref = firestore_db.collection(u'Bets').document(u'' + f'{Player.id}')
+    _Bet = Bet_ref.get()
+    if _Bet.exists:
+        BetDict = _Bet.to_dict()
+        _BetValue: int = BetDict.get("FighterID")
+        return _BetValue
+    else:
+        return False
+
+
+
+
+async def GiveBetsToPlayers():
+    for guild in bot.guilds:
+        for Better in guild.members:
+            if GetPlayerBet(Better):
+                award = GetPlayerBet(Better)
+                AddPlayerBalance(Better, award * 2)
+                DM = await Better.create_dm()
+                DMC = f"{Better.name}, Tu as gagné ${award}, tu as maintenant ${GetPlayerBalance(Better)}"
+                await DM.send(DMC)
+            else:
+                return "Weird error has happened, no members in your discord ???"
+
+
+@bot.command()
+async def bet(ctx, Fighter: discord.Member, amount: int):
+    if GetPlayerBalance(ctx.author) >= amount:
+        Bet_ref = firestore_db.collection(u'Bets').document(u'' + f'{ctx.author.id}')
+        _Bet = Bet_ref.get()
+        print("Creating Bet Profile")
+        data = {
+            u'Bet': amount,
+            u'BetterName': ctx.author.name,
+            u'FighterID': Fighter.id,
+            u'FighterName': Fighter.name
+        }
+        firestore_db.collection(u'Bets').document(u'' + f'{ctx.author.id}').set(data)
+        BetEmbeder = discord.Embed(title="Paris Placé", color=discord.Color.red())
+        BetEmbeder.add_field(name="Better", value=f"```{ctx.author.name}``` ")
+        BetEmbeder.add_field(name=f"{Fighter.name}", value=f"``` Montant: ${GetPlayerBet(ctx.author)}``` ")
+        BetEmbeder.set_author(name="Fight Club", url="https://github.com/Ticass")
+        BetEmbeder.set_footer(text=f"SQ1 Fight Club")
+        await ctx.channel.send(embed=BetEmbeder)
+
+
+
 
 
 
@@ -149,7 +233,7 @@ probabilityCritical = (1 / 2 + 1 / 25 - (1 / 2 * 1 / 25)) * 100
 #Embeds
 
 async def WinEmbed(ctx, Player1: discord.Member, Player2: discord.Member):
-    WinStats = discord.Embed(title="Statistiques des combatants", color=0x0000ff)
+    WinStats = discord.Embed(title="Statistiques des combatants", color=discord.Color.red())
     WinStats.add_field(name=f"{Player1.name}", value=f" Wins: {GetPlayerWins(Player1)} ")
     WinStats.add_field(name=f"{Player2.name}", value=f" Wins: {GetPlayerWins(Player2)} ")
     WinStats.set_author(name="Fight Club", url="https://github.com/Ticass")
@@ -160,13 +244,17 @@ async def WinEmbed(ctx, Player1: discord.Member, Player2: discord.Member):
 async def AnnounceFight(ctx, Player1: discord.Member, Player2: discord.Member):
     rng2 = random.randint(0, 1)
     names = [Player1.name, Player2.name]
-    updated_embed2 = discord.Embed(title="Fight Annoucment", color=0x0000ff)
+    updated_embed2 = discord.Embed(title="Fight Annoucment", color=discord.Color.red())
     updated_embed2.add_field(name="Retard #1", value=f"{Player1.name}")
     updated_embed2.add_field(name="Retard #2", value=f"{Player2.name}")
     updated_embed2.add_field(name="Probabilité", value=f"{probabilityCritical}% pour {names[rng2]}", inline=False)
     updated_embed2.set_author(name="Crybaby", url="https://github.com/Ticass")
     updated_embed2.set_footer(text=f"SQ1 Fight Club")
     await ctx.channel.send(embed=updated_embed2)
+
+
+def DeclareWinner(Player: discord.Member):
+    return Player.id
 
 
 # Main Function
@@ -193,7 +281,7 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
                 f"""```excel\n{Player2.name} - {hit} HP```""")
             Healthtextply1 = str(
                 f"""```css\n{Player1.name}: {mem1Health} HP\n{Player2.name}: {mem2Health} HP```""")
-            updated_embed = discord.Embed(title="Combât", color=0x0000ff)
+            updated_embed = discord.Embed(title="Combât", color=discord.Color.red())
             updated_embed.add_field(name="Degâts Infligés", value=DamageTextply1)
             updated_embed.add_field(name="Vie des joueurs", value=Healthtextply1)
             updated_embed.add_field(name="Log", value=AtkStringPlayer1[rng], inline=False)
@@ -208,7 +296,7 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
                 f"""```excel\n{Player1.name} - {hit}```""")
             Healthtextply2 = str(
                 f"""```css\n{Player1.name}: {mem1Health}\n{Player2.name}: {mem2Health}```""")
-            updated_embed = discord.Embed(title="Combât", color=0x0000ff)
+            updated_embed = discord.Embed(title="Combât", color=discord.Color.red())
             updated_embed.add_field(name="Degâts Infligés", value=DamageTextply2)
             updated_embed.add_field(name="Vie des joueurs", value=Healthtextply2)
             updated_embed.add_field(name="Log", value=AtkStringsPlayer2[rng], inline=False)
@@ -220,8 +308,11 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
         if mem1Health < 1 or mem2Health < 1:
             print(f"Vie du joueur 2: {mem1Health} HP")
             print(f"Vie du joueur 2: {mem2Health} HP")
+            await GiveBetsToPlayers()
         if mem1Health > mem2Health:
-            Fight_end = discord.Embed(title="Résultats du combat", color=0x0000ff)
+            StoreFight(Player1, Player2, date.today(), Player1)
+            DeclareWinner(Player1)
+            Fight_end = discord.Embed(title="Résultats du combat", color=discord.Color.red())
             Fight_end.add_field(name="Retard #1", value=f"{Player1.name}")
             Fight_end.add_field(name="Retard #2", value=f"{Player2.name}")
             Fight_end.add_field(name="Vainqueur", value=f"{Player1.name}", inline=False)
@@ -237,13 +328,10 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await AddWin(Player1)
             await WinEmbed(ctx, Player1, Player2)
             await Player2.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
-            _bet = await Bet()
-            PlayerBettedOn = _bet.get("Player_Betted_on")
-            betAmount = _bet.get("Amount")
-            if PlayerBettedOn == Player1:
-                AddPlayerBalance(Player1, betAmount)
         elif mem1Health < mem2Health:
-            Fight_end = discord.Embed(title="Résultats du combat", color=0x0000ff)
+            DeclareWinner(Player2)
+            StoreFight(Player1, Player2, date.today(), Player2)
+            Fight_end = discord.Embed(title="Résultats du combat", color=discord.Color.red())
             Fight_end.add_field(name="Retard #1", value=f"{Player1.name}")
             Fight_end.add_field(name="Retard #2", value=f"{Player2.name}")
             Fight_end.add_field(name="Vainqueur", value=f"{Player2.name}", inline=False)
@@ -259,11 +347,6 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await AddWin(Player2)
             await WinEmbed(ctx, Player1, Player2)
             await Player1.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
-            _bet = await Bet()
-            PlayerBettedOn = _bet.get("Player_Betted_on")
-            betAmount = _bet.get("Amount")
-            if PlayerBettedOn == Player2:
-                AddPlayerBalance(Player2, betAmount)
 
 
 
