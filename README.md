@@ -39,4 +39,6 @@ Simply type ```!fight @Player1 @Player2``` and enjoy ! :)
 
 # Images
 
-[![Image from Gyazo](https://i.gyazo.com/c2008271835efa7f211cd70b75fbafc5.gif)](https://gyazo.com/c2008271835efa7f211cd70b75fbafc5)
+[![Image from Gyazo](https://i.gyazo.com/ba77d501d097b034a045f5c64ee680d8.png)](https://gyazo.com/ba77d501d097b034a045f5c64ee680d8)
+
+[![Image from Gyazo](https://i.gyazo.com/b4c2346d491456253cc6606fdadad70a.png)](https://gyazo.com/b4c2346d491456253cc6606fdadad70a)
