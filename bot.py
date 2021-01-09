@@ -217,6 +217,7 @@ async def bet(ctx, Fighter: discord.Member, amount: int):
         BetEmbeder.add_field(name=f"{Fighter.name}", value=f"``` Montant: ${GetPlayerBet(ctx.author)}``` ")
         BetEmbeder.set_author(name="Fight Club", url="https://github.com/Ticass")
         BetEmbeder.set_footer(text=f"SQ1 Fight Club")
+        RemovePlayerBalance(amount)
         await ctx.channel.send(embed=BetEmbeder)
 
 
