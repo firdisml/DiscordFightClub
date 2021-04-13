@@ -60,6 +60,9 @@ rngLol = random.randint(1, 25)
 
 
 
+
+
+
 async def RegisterDB(Player: discord.Member):
     Player_ref = firestore_db.collection(u'Players').document(u''+f'{Player.id}')
     _Player = Player_ref.get()
@@ -76,6 +79,44 @@ async def RegisterDB(Player: discord.Member):
         await channel2.send(content2)
     else:
         pass
+
+
+
+
+@bot.command()
+async def RegisterNword(Message: discord.Message):
+    nword_ref = firestore_db.collection(u'nwords').document(u''+f'{Message.author.id}')
+    _Nword = nword_ref.get()
+    if not _Nword.exists:
+        print("Nword profile non existent")
+        data = {
+            u'Name': f'{Message.author.name}',
+            u'ID': f'{Message.author.id}',
+            u'Nword_Count': 0
+        }
+        firestore_db.collection(u'nwords').document(u'' + f'{Message.author.id}').set(data)
+        print(f"Stored Data for {Message.author.display_name}")
+    else:
+        pass
+
+
+async def GetNwords(Playerid):
+    nwords = firestore_db.collection(u'nwords').document(u''+f'{Playerid}')
+    _nwordSnap = nwords.get()
+    if _nwordSnap.exists:
+        _nwordDic = _nwordSnap.to_dict()
+        print(_nwordDic)
+        _count = _nwordDic.get("Nword_Count")
+        nwords.update({u'Nword_Count': _count + 1})
+        return _count
+    else:
+        pass
+
+
+
+
+
+
 
 
 async def AddWin(Member: discord.Member):
@@ -151,6 +192,16 @@ def AddPlayerBalance(Player: discord.Member, money: int):
         print("No document found")
 
 
+def AddPlayerBalanceBet(PlayerID: str, money: int):
+    Player_ref = firestore_db.collection(u'Players').document(u'' + f'{PlayerID}')
+    Balance = Player_ref.get()
+    if Balance.exists:
+        _Balance = Balance.get("Balance")
+        Player_ref.update({u'Balance': _Balance + money})
+    else:
+        print("No document found")
+
+
 def RemovePlayerBalance(Player: discord.Member, money: int):
     Player_ref = firestore_db.collection(u'Players').document(u'' + f'{Player.id}')
     Balance = Player_ref.get()
@@ -186,6 +237,45 @@ def GetPlayerBettedOn(Player: discord.Member):
 
 
 
+
+#- Get toute les bets placé sur un joueur
+
+#- Ajouter les bets dans un array
+
+#- Trouver les joueurs qui ont bet
+
+# faire un "pot" avec toute les bets, pi splitter ça selon le nombre de joueurs qui ont bet
+
+
+
+def AwardBet(winner: discord.Member):
+    Bet_ref = firestore_db.collection(u'Bets')
+    _bet = Bet_ref.where(u'FighterID', u'==', u''+str(winner.id))
+    bets = []
+    Betters = []
+    Pot = 1
+    for Thebet in _bet.stream():
+        Betters.append(Thebet.toDict().get('BetterID'))
+        bets.append(Thebet.toDict().get('Bet'))
+        print(Thebet.toDict())
+        print(Betters)
+        print(bets)
+    for amount in bets:
+        Pot = Pot + amount
+        print(Pot)
+    for ID in Betters:
+        Reward = Pot / len(Betters)
+        AddPlayerBalanceBet(ID, round(Reward))
+
+
+
+
+def deleteBet(winner: discord.Member):
+    Bet_ref = firestore_db.collection(u'Bets')
+    _bet = Bet_ref.where(u'FighterID', u'==', u'' + str(winner.id))
+    _bet.delete()
+
+
 async def GiveBetsToPlayers():
     for guild in bot.guilds:
         for Better in guild.members:
@@ -208,6 +298,7 @@ async def bet(ctx, Fighter: discord.Member, amount: int):
         data = {
             u'Bet': amount,
             u'BetterName': ctx.author.name,
+            u'BetterID': ctx.author.id,
             u'FighterID': Fighter.id,
             u'FighterName': Fighter.name
         }
@@ -329,6 +420,9 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await AddWin(Player1)
             await WinEmbed(ctx, Player1, Player2)
             await Player2.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
+            AwardBet(Player1)
+            print(AwardBet(Player1))
+            #deleteBet(Player1)
         elif mem1Health < mem2Health:
             DeclareWinner(Player2)
             StoreFight(Player1, Player2, date.today(), Player2)
@@ -347,6 +441,9 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
             await channel3.send(content3)
             await AddWin(Player2)
             await WinEmbed(ctx, Player1, Player2)
+            AwardBet(Player2)
+            print(AwardBet(Player2))
+            #deleteBet(Player2)
             await Player1.move_to(discord.VoiceChannel.name == "TRANSEXUELS #LGBTQ+")
 
 
@@ -354,6 +451,24 @@ async def Attack(ctx, Player1: discord.Member, Player2: discord.Member):
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+
+
+@bot.event
+async def on_message(message):
+    if message.author == bot.user or message.author == bot:
+        return
+    if "nigger" in message.content or "nigga" in message.content or "nibba" in message.content:
+        await RegisterNword(message)
+        _count = await GetNwords(message.author.id)
+        Fight_end = discord.Embed(title="Nword Alert", color=discord.Color.red())
+        Fight_end.add_field(name="Retard", value=f"{message.author}")
+        Fight_end.add_field(name="Nword Count", value=f"{_count}")
+        Fight_end.add_field(name="Situation", value=f"{message.author} a utilisé le Nword {_count} fois")
+        Fight_end.set_author(name="Fight Club", url="https://github.com/Ticass")
+        Fight_end.set_footer(text=f"Nword Alert bot")
+        await message.channel.send(embed=Fight_end)
+
+
 
 
 
