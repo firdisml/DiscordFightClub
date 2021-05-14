@@ -1,7 +1,8 @@
+
+**The bot is only in french canadian for the moment**
+---
 # DiscordFightClub
 Ever wanted to have a fighting club in your discord server ? Discord Fight Club bot is here for you
-
-# THE BOT IS IN FRENCH YOU'LL HAVE TU MANUALLY CHANGE THE ATTACK STRINGS TO YOUR LANGUAGE, I WILL RELEASE A DIFFERENT VERSION IN ENGLISH
 
 
 # Features
