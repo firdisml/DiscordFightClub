@@ -16,7 +16,7 @@ Ever wanted to have a fighting club in your discord server ? Discord Fight Club 
 * Clean UI
 
 
-# SETUP
+# Running the bot on your own
 
 * Create a bot on dev portal
 
@@ -28,11 +28,13 @@ Ever wanted to have a fighting club in your discord server ? Discord Fight Club 
 
 * After that, open your console inside the root folder again, and run : source FightClub/activate
 
-# Running the bot locally
-
 * after completing the Setup steps, run: python3 sq1.py
 
 * The bot should have joined your server
+
+# Inviting the bot
+
+* Simply use **[this link](https://discord.com/api/oauth2/authorize?client_id=793329910457565194&permissions=0&scope=bot)** to invite the bot to your server
 
 # How to use the bot ?
 
